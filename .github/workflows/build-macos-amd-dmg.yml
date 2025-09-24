@@ -50,38 +50,15 @@ jobs:
       - name: Run build and release script
         run: chmod +x .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh && .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
 
-      - name: Check if release exists
-        id: check-release
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}")
-          if [ "$response" -eq 404 ]; then
-            echo "Release does not exist."
-            echo "release_exists=false" >> $GITHUB_ENV
-          else
-            echo "Release exists."
-            echo "release_exists=true" >> $GITHUB_ENV
-          fi
-
-      - name: Create release if not exists
-        if: env.release_exists == 'false'
-        run: |
-          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -d '{"tag_name": "${{ github.ref_name }}", "name": "${{ github.ref_name }}", "draft": true, "prerelease": true}' \
-            "https://api.github.com/repos/${{ github.repository }}/releases"
-
       - name: Upload build file to GitHub Release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          overwrite: true
-          draft: true
-          prerelease: true
-          file: "artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
+          tag_name: "${{ github.ref_name }}"
+          name: "${{ github.ref_name }}"
+          body: "Automated release for ${{ github.ref_name }}"
+          files: "artifacts/PactusGUI-${{ github.ref_name }}-macos-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
 
       - name: Generate release download links
         run: |
