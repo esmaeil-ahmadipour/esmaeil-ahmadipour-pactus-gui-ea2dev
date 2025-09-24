@@ -52,12 +52,10 @@ jobs:
           .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
 
       - name: Upload build file to GitHub Release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }} # This is the correct input for the tag
-          overwrite: true  # ← Use overwrite instead of overwrite_files
-          file: "artifacts/PactusGUI-${{ github.ref_name }}-macos-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
+          tag_name: ${{ github.ref_name }}
+          files: artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
