@@ -55,6 +55,7 @@ jobs:
         with:
           tag_name: "${{ github.ref_name }}"
           name: "${{ github.ref_name }}"
+          overwrite_files: true  # ← Change this
           body: "Automated release for ${{ github.ref_name }}"
           files: "artifacts/PactusGUI-${{ github.ref_name }}-macos-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
         env:
