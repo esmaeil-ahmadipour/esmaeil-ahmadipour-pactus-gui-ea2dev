@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 env:
   FLUTTER_VERSION: 3.32.0
@@ -41,32 +40,17 @@ jobs:
       - name: Run build and release script
         run: chmod +x .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh && .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
 
-      - name: Upload build file to GitHub Release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          overwrite: true
-          draft: true
-          prerelease: false
-          file: "artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
+      - name: Upload artifacts to existing GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-      - name: Save artifact to centralized folder
         run: |
-          mkdir -p ./all-artifacts/${{ env.TARGET_OS }}
-          cp "artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}" ./all-artifacts/${{ env.TARGET_OS }}/
-
-      - name: List all files and folders in artifacts
-        run: |
-          echo "Files in folder:"
-          ls -R ./
-          echo "Files in artifacts folder:"
-          ls -R ./artifacts
-          echo "Files in all-artifacts folder:"
-          ls -R ./all-artifacts
+          TAG=${{ github.ref_name }}
+          REPO=${{ github.repository }}
+          echo "Uploading all artifacts for $TAG to release..."
+          for FILE in ./all-artifacts/${{ env.TARGET_OS }}/*; do
+            LABEL=$(basename "$FILE")
+            gh release upload "$TAG" "$FILE#$LABEL" --clobber --repo "$REPO"
+          done
 
       - name: Generate release download links
         run: |
