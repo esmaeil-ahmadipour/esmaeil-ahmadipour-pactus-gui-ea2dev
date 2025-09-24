@@ -65,22 +65,3 @@ jobs:
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
           echo "Download URL: $DOWNLOAD_URL"
           echo "Release URL: $RELEASE_URL"
-
-  notify-sercive:
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Discord Notification
-        uses: Ilshidur/action-discord@master
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        with:
-          args: |
-            🚀 **GUI Release:** [${{ needs.build-and-release.outputs.tag_name }}](${{ needs.build-and-release.outputs.release_link }})  📥[Download ${{ env.TARGET_OS }}-${{ env.ARCH }} Version](${{ needs.build-and-release.download_link }})
-
-      - name: Send Slack Notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MESSAGE: |
-            🚀 **GUI Release:** [${{ needs.build-and-release.outputs.tag_name }}](${{ needs.build-and-release.outputs.release_link }})      📥[Download  ${{ env.TARGET_OS }}-${{ env.ARCH }} Version](${{ needs.build-and-release.outputs.download_link }})
