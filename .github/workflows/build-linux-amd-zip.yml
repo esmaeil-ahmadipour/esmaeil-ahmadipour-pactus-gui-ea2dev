@@ -41,14 +41,17 @@ jobs:
         run: chmod +x .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh && .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
 
       - name: Upload build file to GitHub Release
-        uses: svenstaro/upload-release-action@v2
+        uses: ncipollo/release-action@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: 'artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}'
-          asset_name: 'PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}'
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: "This is my release text"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}  # e.g., v3.99.99
+          name: PactusGUI-${{ github.ref_name }}
+          body: Automated release for ${{ github.ref_name }}
+          artifacts: artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}
+          draft: true  # Keep as draft to allow other workflows to add assets
+          allowUpdates: true  # Update draft if it exists
+          replaceArtifacts: false  # Keep existing assets from other workflows
+          makeLatest: false  # Don't publish yet
 
       - name: Generate release download links
         run: |
