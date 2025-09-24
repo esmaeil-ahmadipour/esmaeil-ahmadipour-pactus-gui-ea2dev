@@ -18,18 +18,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Download all artifacts from previous workflows
-      - name: Download all workflow artifacts
-        uses: actions/download-artifact@v3
+      # 2️⃣ Download artifacts from each workflow
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
         with:
-          name: all-artifacts
-          path: ./all-artifacts
+          name: windows-artifact
+          path: ./all-artifacts/windows
 
-      # 3️⃣ Upload all artifacts to the draft release
+      - name: Download Linux AMD64 AppImage
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-amd64-appimage
+          path: ./all-artifacts/linux-amd64-appimage
+
+      - name: Download Linux AMD64 Zip
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-amd64-zip
+          path: ./all-artifacts/linux-amd64-zip
+
+      - name: Download Linux ARM64 AppImage
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-arm64-appimage
+          path: ./all-artifacts/linux-arm64-appimage
+
+      - name: Download Linux ARM64 Zip
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-arm64-zip
+          path: ./all-artifacts/linux-arm64-zip
+
+      - name: Download MacOS AMD64 dmg
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-amd64-dmg
+          path: ./all-artifacts/macos-amd64-dmg
+
+      - name: Download MacOS ARM64 dmg
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-dmg
+          path: ./all-artifacts/macos-arm64-dmg
+
+      # 3️⃣ Upload all artifacts to draft release
       - name: Upload all artifacts to draft release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -37,11 +73,11 @@ jobs:
           tag: ${{ github.ref_name }}
           overwrite: true
           draft: true
-          files: ./all-artifacts/**/*   # recursively include all files from centralized folder
+          files: ./all-artifacts/**/*   # recursively include all files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4️⃣ Publish the draft release as final release
+      # 4️⃣ Publish final release
       - name: Publish final release
         uses: softprops/action-gh-release@v1
         with:
