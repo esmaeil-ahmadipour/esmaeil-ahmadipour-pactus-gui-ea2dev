@@ -50,17 +50,23 @@ jobs:
         run: |
           chmod +x .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh
           .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
-      - name: Upload artifacts to existing GitHub release
+
+      - name: Upload build file to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG=${{ github.ref_name }}
-          REPO=${{ github.repository }}
-          echo "Uploading all artifacts for $TAG to release..."
-          for FILE in ./all-artifacts/${{ env.TARGET_OS }}/*; do
-            LABEL=$(basename "$FILE")
-            gh release upload "$TAG" "$FILE#$LABEL" --clobber --repo "$REPO"
-          done
+          TAG="${{ github.ref_name }}"
+          FILE_PATH="artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
+          
+          echo "Uploading $FILE_PATH to release $TAG..."
+          
+          if [ ! -f "$FILE_PATH" ]; then
+            echo "❌ Error: File $FILE_PATH not found!"
+            exit 1
+          fi
+          
+          gh release upload "$TAG" "$FILE_PATH" --clobber
+          echo "✅ Successfully uploaded $FILE_PATH to release $TAG"
 
       - name: Generate release download links
         run: |
