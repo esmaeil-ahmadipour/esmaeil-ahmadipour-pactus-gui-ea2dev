@@ -1,52 +1,62 @@
-name: Finalize Release
-
+name: Create Final Release
 on:
-  workflow_run:
-    workflows:
-      - "Build & Release Linux (AMD64/AppImage)"
-      - "Build & Release Linux (AMD64/Zip)"
-      - "Build & Release Linux (ARM64/AppImage)"
-      - "Build & Release Linux (ARM64/Zip)"
-      - "Build & Release MacOs (AMD64/dmg)"
-      - "Build & Release MacOs (ARM64/dmg)"
-      - "Build & Release Windows (AMD64/Zip)"
-    types:
-      - completed
+  workflow_dispatch:  # Manual trigger after all builds complete
+  # OR use repository_dispatch to trigger programmatically
 
 jobs:
-  finalize-release:
+  aggregate-release:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ Checkout the repository
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 2️⃣ Download all artifacts from previous workflows
-      - name: Download all workflow artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: all-artifacts
-          path: ./all-artifacts
-
-      # 3️⃣ Upload all artifacts to the draft release
-      - name: Upload all artifacts to draft release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
-          overwrite: true
-          draft: true
-          files: ./all-artifacts/**/*   # recursively include all files from centralized folder
+      - name: Download All Draft Assets
+        run: |
+          # Install GitHub CLI
+          type -p gh >/dev/null || curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh -y
+          
+          # Download assets from all draft releases
+          mkdir -p aggregated-assets
+          
+          # Get list of draft releases for this version
+          DRAFTS=$(gh release list --limit 50 --json tagName,isDraft | jq -r '.[] | select(.tagName | startswith("${{ github.ref_name }}-draft-")) | .tagName')
+          
+          for draft in $DRAFTS; do
+            echo "Downloading assets from $draft"
+            gh release download $draft --dir aggregated-assets
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4️⃣ Publish the draft release as final release
-      - name: Publish final release
-        uses: softprops/action-gh-release@v1
+      - name: List Downloaded Files
+        run: ls -la aggregated-assets/
+
+      - name: Create Final Release with All Assets
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          name: ${{ github.ref_name }}
+          body: |
+            Multi-platform release ${{ github.ref_name }}
+            
+            Includes:
+            - Linux AMD64
+            - Linux ARM64  
+            - Windows
+            - macOS
+          files: aggregated-assets/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup Draft Releases
+        run: |
+          # Delete all draft releases for this version
+          DRAFTS=$(gh release list --limit 50 --json tagName,isDraft | jq -r '.[] | select(.tagName | startswith("${{ github.ref_name }}-draft-")) | .tagName')
+          
+          for draft in $DRAFTS; do
+            echo "Deleting draft release $draft"
+            gh release delete $draft --yes
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
