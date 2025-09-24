@@ -58,6 +58,15 @@ jobs:
           mkdir -p ./all-artifacts/${{ env.TARGET_OS }}
           cp "artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}" ./all-artifacts/${{ env.TARGET_OS }}/
 
+      - name: List all files and folders in artifacts
+        run: |
+          echo "Files in folder:"
+          ls -R ./
+          echo "Files in artifacts folder:"
+          ls -R ./artifacts
+          echo "Files in all-artifacts folder:"
+          ls -R ./all-artifacts
+
       - name: Generate release download links
         run: |
           TAG=${{ github.ref_name }}
