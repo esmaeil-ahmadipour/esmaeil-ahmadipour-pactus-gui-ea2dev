@@ -1,8 +1,10 @@
 name: Create Final Release
 on:
-  workflow_dispatch:  # Manual trigger after all builds complete
-  # OR use repository_dispatch to trigger programmatically
-
+  workflow_run:
+    workflows:
+      - "Build & Release Linux (AMD64/Zip)"
+    types:
+      - completed
 jobs:
   aggregate-release:
     runs-on: ubuntu-latest
