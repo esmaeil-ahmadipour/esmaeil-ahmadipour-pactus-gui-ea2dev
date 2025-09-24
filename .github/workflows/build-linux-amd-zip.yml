@@ -41,17 +41,14 @@ jobs:
         run: chmod +x .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh && .github/scripts/build_and_package_${{ env.TARGET_OS }}_${{ env.ARCH }}_${{ env.FILE_TYPE }}.sh ${{ github.ref_name }}
 
       - name: Upload build file to GitHub Release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}  # e.g., v3.99.99
-          name: PactusGUI-${{ github.ref_name }}
-          body: Automated release for ${{ github.ref_name }}
-          artifacts: artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}
-          draft: true  # Keep as draft to allow other workflows to add assets
-          allowUpdates: true  # Update draft if it exists
-          replaceArtifacts: false  # Keep existing assets from other workflows
-          makeLatest: false  # Don't publish yet
+          tag_name: "${{ github.ref_name }}"
+          name: "${{ github.ref_name }}"
+          body: "Automated release for ${{ github.ref_name }}"
+          files: "artifacts/PactusGUI-${{ github.ref_name }}-${{ env.TARGET_OS }}-${{ env.ARCH }}.${{ env.FILE_TYPE }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate release download links
         run: |
@@ -61,3 +58,22 @@ jobs:
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
           echo "Download URL: $DOWNLOAD_URL"
           echo "Release URL: $RELEASE_URL"
+
+  notify-sercive:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: |
+            🚀 **GUI Release:** [${{ needs.build-and-release.outputs.tag_name }}](${{ needs.build-and-release.outputs.release_link }})  📥[Download ${{ env.TARGET_OS }}-${{ env.ARCH }} Version](${{ needs.build-and-release.download_link }})
+
+      - name: Send Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            🚀 **GUI Release:** [${{ needs.build-and-release.outputs.tag_name }}](${{ needs.build-and-release.outputs.release_link }})      📥[Download  ${{ env.TARGET_OS }}-${{ env.ARCH }} Version](${{ needs.build-and-release.outputs.download_link }})
